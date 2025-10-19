@@ -35,6 +35,9 @@ DISABLE_WARNING_POP
 
 #include "controllers/controller_execute.hpp"
 
+#include <optional>
+using std::optional;
+
 namespace py = pybind11;
 using namespace AER;
 
@@ -56,8 +59,11 @@ public:
   }
 };
 
+// ===================================================
+// Write Value Templates
+// ===================================================
 template <typename T>
-py::tuple write_value(size_t index, const optional<T> &v) {
+py::tuple write_value(size_t index, const std::optional<T> &v) {
   return py::make_tuple(v.has_value(), v.value());
 }
 
@@ -66,15 +72,33 @@ T write_value(size_t index, const T &v) {
   return v;
 }
 
+// ===================================================
+// Read Value Templates
+// ===================================================
+
+// 1. For optional<T>
 template <typename T>
-void read_value(const py::tuple &t, size_t index, optional<T> &v) {
-  if (t[index].cast<py::tuple>()[0].cast<bool>())
-    v.value(t[index].cast<py::tuple>()[1].cast<T>());
+void read_value(const py::tuple &t, size_t index, std::optional<T> &v) {
+  if (index < t.size()) {
+    py::object element = t[index];
+    py::tuple tuple_obj = element.cast<py::tuple>();
+
+    if (tuple_obj.size() > 1) {
+      bool has_value = tuple_obj[0].cast<bool>();
+      if (has_value) {
+        py::object val_obj = tuple_obj[1];
+        v = val_obj.cast<T>();
+      }
+    }
+  }
 }
 
+// 2. For direct (non-optional) types
 template <typename T>
 void read_value(const py::tuple &t, size_t index, T &v) {
-  v = t[index].cast<T>();
+  if (index < t.size()) {
+    v = t[index].cast<T>();
+  }
 }
 
 template <typename MODULE>
