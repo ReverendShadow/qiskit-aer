@@ -275,24 +275,23 @@ class strided_range {
 public:
   typedef typename thrust::iterator_difference<Iterator>::type difference_type;
 
-struct stride_functor {
+  struct stride_functor {
     using argument_type = difference_type;
-    using result_type   = difference_type;
+    using result_type = difference_type;
 
     difference_type stride;
 
-    __host__ __device__
-    stride_functor(difference_type _stride) : stride(_stride) {}
+    __host__ __device__ stride_functor(difference_type _stride)
+        : stride(_stride) {}
 
-    __host__ __device__
-    result_type operator()(const argument_type &i) const {
-        if (stride == 1)  // statevector case
-            return i;
+    __host__ __device__ result_type operator()(const argument_type &i) const {
+      if (stride == 1) // statevector case
+        return i;
 
-        // density matrix case
-        difference_type i_chunk = i / (stride - 1);
-        result_type ret = stride * i - i_chunk * (stride - 1);
-        return ret;
+      // density matrix case
+      difference_type i_chunk = i / (stride - 1);
+      result_type ret = stride * i - i_chunk * (stride - 1);
+      return ret;
     }
   };
 
@@ -330,28 +329,25 @@ protected:
 
 template <typename data_t>
 struct complex_dot_scan {
-    using argument_type = thrust::complex<data_t>;
-    using result_type   = thrust::complex<data_t>;
+  using argument_type = thrust::complex<data_t>;
+  using result_type = thrust::complex<data_t>;
 
-    __host__ __device__
-    result_type operator()(argument_type x) const {
-        // Return |x|² as a complex number (real = magnitude², imag = 0)
-        return result_type(x.real() * x.real() + x.imag() * x.imag(), 0);
-    }
+  __host__ __device__ result_type operator()(argument_type x) const {
+    // Return |x|² as a complex number (real = magnitude², imag = 0)
+    return result_type(x.real() * x.real() + x.imag() * x.imag(), 0);
+  }
 };
 
 template <typename data_t>
 struct complex_norm {
-    using argument_type = thrust::complex<data_t>;
-    using result_type   = thrust::complex<double>;
+  using argument_type = thrust::complex<data_t>;
+  using result_type = thrust::complex<double>;
 
-    __host__ __device__
-    result_type operator()(argument_type x) const {
-        return result_type(
-            static_cast<double>(x.real()) * static_cast<double>(x.real()),
-            static_cast<double>(x.imag()) * static_cast<double>(x.imag())
-        );
-    }
+  __host__ __device__ result_type operator()(argument_type x) const {
+    return result_type(
+        static_cast<double>(x.real()) * static_cast<double>(x.real()),
+        static_cast<double>(x.imag()) * static_cast<double>(x.imag()));
+  }
 };
 
 template <typename data_t>
