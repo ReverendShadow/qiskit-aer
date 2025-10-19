@@ -8,8 +8,28 @@
 # For Mac, statically linking only happens with user libraries, system libraries cannot
 # be linked statically per Apple's indications.
 
+# ============================================================
+# Enforce modern C++ and CUDA standards globally
+# ============================================================
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
+# Also ensure these flags propagate to all subprojects
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
+
+# Load version info
 file(STRINGS "qiskit_aer/VERSION.txt" VERSION_NUM)
+
+# Define the main project
+project(QiskitAer VERSION ${VERSION_NUM} LANGUAGES CXX CUDA)
+
+# Add the core Aer simulator subdirectory
+add_subdirectory(qiskit_aer)
+
 
 # For ROCm builds we need to make sure the CXX and HIP compilers match and are clang.
 # We should do this before the project() call to make sure the compiler options are
@@ -278,21 +298,50 @@ if(AER_THRUST_SUPPORTED)
 		message(STATUS "Thrust library: Looking for CUDA backend...")
 		find_package(CUDA REQUIRED)
 		message(STATUS "Thrust library: CUDA found!")
-		if(NOT DEFINED AER_CUDA_ARCH)
-			if(DEFINED ENV{AER_CUDA_ARCH})
-				set(AER_CUDA_ARCH $ENV{AER_CUDA_ARCH})
-			else()
-				set(AER_CUDA_ARCH "Auto")
-			endif()
-		endif()
-		cuda_select_nvcc_arch_flags(AER_CUDA_ARCH_FLAGS ${AER_CUDA_ARCH})
 
-		string(REPLACE ";" " "  AER_CUDA_ARCH_FLAGS_EXPAND "${AER_CUDA_ARCH_FLAGS}")
+# === Force C++17 for CUDA 13+ ===
+set(CMAKE_CUDA_STANDARD 17)
+set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-		string(REGEX MATCHALL "sm_[0-9][0-9]" CUDA_SM "${AER_CUDA_ARCH_FLAGS}")
-		string(REPLACE "sm_" ""  AER_CUDA_ARCHITECTURES "${CUDA_SM}")
-		set(CMAKE_CUDA_ARCHITECTURES "${AER_CUDA_ARCHITECTURES}")
-		message(STATUS "CMAKE_CUDA_ARCHITECTURES = ${CMAKE_CUDA_ARCHITECTURES}")
+# Add explicit compiler flags to ensure nvcc honors it
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} -std=c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /std:c++17")
+
+message(STATUS "Using C++17 standard for CUDA 13+ build")
+
+# === Patched for CUDA 13+ (Manual Architecture Override) ===
+# Old cuda_select_nvcc_arch_flags() causes unsupported SM versions (e.g., 53, 60, 61)
+# We'll override it manually to ensure compatibility with modern toolkits.
+
+message(STATUS "Thrust library: CUDA found! (patched for CUDA 13+)")
+
+# Force supported architectures only
+set(AER_CUDA_ARCHITECTURES "75;80;86")
+
+# Apply to both Aer and CMake
+set(CMAKE_CUDA_ARCHITECTURES "${AER_CUDA_ARCHITECTURES}")
+set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --generate-code=arch=compute_75,code=sm_75 --generate-code=arch=compute_80,code=sm_80 --generate-code=arch=compute_86,code=sm_86")
+
+message(STATUS "CMAKE_CUDA_ARCHITECTURES = ${CMAKE_CUDA_ARCHITECTURES}")
+
+#		Original auto-detection code disabled
+#		if(NOT DEFINED AER_CUDA_ARCH)
+#			if(DEFINED ENV{AER_CUDA_ARCH})
+#				set(AER_CUDA_ARCH $ENV{AER_CUDA_ARCH})
+#			else()
+#				set(AER_CUDA_ARCH "Auto")
+#			endif()
+#		endif()
+#		cuda_select_nvcc_arch_flags(AER_CUDA_ARCH_FLAGS ${AER_CUDA_ARCH})
+#
+#		string(REPLACE ";" " "  AER_CUDA_ARCH_FLAGS_EXPAND "${AER_CUDA_ARCH_FLAGS}")
+#
+#		string(REGEX MATCHALL "sm_[0-9][0-9]" CUDA_SM "${AER_CUDA_ARCH_FLAGS}")
+#		string(REPLACE "sm_" ""  AER_CUDA_ARCHITECTURES "${CUDA_SM}")
+#		set(CMAKE_CUDA_ARCHITECTURES "${AER_CUDA_ARCHITECTURES}")
+#		message(STATUS "CMAKE_CUDA_ARCHITECTURES = ${CMAKE_CUDA_ARCHITECTURES}")
 
 		if(NOT DEFINED AER_PYTHON_CUDA_ROOT AND DEFINED ENV{AER_PYTHON_CUDA_ROOT})
 			set(AER_PYTHON_CUDA_ROOT $ENV{AER_PYTHON_CUDA_ROOT})
@@ -542,5 +591,6 @@ set(AER_LIBRARIES
 
 set(AER_COMPILER_DEFINITIONS ${AER_COMPILER_DEFINITIONS} ${CONAN_DEFINES})
 
+project(QiskitAer LANGUAGES CXX CUDA)
 add_subdirectory(qiskit_aer/backends/wrappers)
 
