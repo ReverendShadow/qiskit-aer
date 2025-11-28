@@ -12,9 +12,14 @@
 # Enforce modern C++ and CUDA standards globally
 # ============================================================
 set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD_REQUIRED OFF)
 set(CMAKE_CUDA_STANDARD 17)
-set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+
+#Only set CUDA if CUDA is actually enabled for this build
+if(AER_ENABLE_CUDA)
+	set(CMAKE_CUDA_STANDARD_REQUIRED ON)
+	set(CMAKE_CUDA_STANDARD 17)
+endif()
 
 # Also ensure these flags propagate to all subprojects
 set(CMAKE_CXX_EXTENSIONS OFF)
@@ -26,6 +31,11 @@ file(STRINGS "qiskit_aer/VERSION.txt" VERSION_NUM)
 
 # Define the main project
 project(QiskitAer VERSION ${VERSION_NUM} LANGUAGES CXX CUDA)
+
+# Enable CUDA language only when requested and when a toolkit is available
+if(AER_ENABLE_CUDA)
+    enable_language(CUDA)
+endif()
 
 # Add the core Aer simulator subdirectory
 add_subdirectory(qiskit_aer)
