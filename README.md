@@ -1,3 +1,5 @@
+
+
 # Aer - high performance quantum circuit simulation for Qiskit
 
 [![License](https://img.shields.io/github/license/Qiskit/qiskit-aer.svg?style=popout-square)](https://opensource.org/licenses/Apache-2.0)
@@ -7,6 +9,23 @@
 [![](https://img.shields.io/pypi/dm/qiskit-aer.svg?style=popout-square)](https://pypi.org/project/qiskit-aer/)
 
 **Aer** is a high performance simulator for quantum circuits written in Qiskit, that includes realistic noise models.
+
+**Windows 11 + CUDA 13 Experimental Build**
+
+This branch (fix/win-cuda13-build) contains an experimental Qiskit-Aer build that has been
+successfully compiled and validated locally on Windows 11 with CUDA 13.
+
+* CI workflows do not support this environment.
+* GitHub runners have no CUDA toolkit, so CI will always report failures.
+* All validation for this branch is performed locally, on the CUDA-equipped development machine.
+* This branch reflects the known-good, fully working CUDA13 build.
+
+This branch should be used for:
+* Windows CUDA13 testing
+* GPU-accelerated local experiments
+* Development of custom CUDA kernels or GPU integration
+
+**CI failures on this branch are expected and can be ignored.**
 
 ## Installation
 
