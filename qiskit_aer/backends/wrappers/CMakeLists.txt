@@ -1,6 +1,14 @@
 include(Linter)
 find_package(Pybind11 REQUIRED)
 
+# Compatibility shim for modern pybind11
+if (NOT COMMAND basic_pybind11_add_module)
+    function(basic_pybind11_add_module target_name)
+        pybind11_add_module(${target_name} ${ARGN})
+    endfunction()
+endif()
+
+
 # We need to remove the -static flag, because Python Extension system only supports
 # dynamic linked libraries, but we want to build a shared libraries with the least
 # dependencies we can, so some of these dependencies are linked statically into our
@@ -61,7 +69,9 @@ else()
 endif()
 target_include_directories(controller_wrappers PRIVATE ${AER_SIMULATOR_CPP_SRC_DIR}
                                                PRIVATE ${AER_SIMULATOR_CPP_EXTERNAL_LIBS})
-target_link_libraries(controller_wrappers ${AER_LIBRARIES})
+target_link_libraries(controller_wrappers 
+                        PRIVATE ${AER_LIBRARIES}
+                        )
 target_compile_definitions(controller_wrappers PRIVATE ${AER_COMPILER_DEFINITIONS})
 install(TARGETS controller_wrappers LIBRARY DESTINATION qiskit_aer/backends)
 
