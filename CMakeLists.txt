@@ -74,9 +74,9 @@ set(EXTRA_LANGUAGES "")
 if(AER_THRUST_BACKEND STREQUAL "CUDA")
   list(APPEND EXTRA_LANGUAGES CUDA)
 endif()
-
-include(CheckLanguage)
-project(qasm_simulator VERSION ${VERSION_NUM} LANGUAGES CXX C ${EXTRA_LANGUAGES} )
+# We don't want to auto-enable CUDA as a language in CI, so don't use EXTRA_LANGUAGES here.
+include(CheckLanguage)  # Not needed if we're not probing CUDA as a language.
+project(qasm_simulator VERSION ${VERSION_NUM} LANGUAGES CXX C )
 
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake)
